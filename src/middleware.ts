@@ -17,6 +17,24 @@ export default clerkMiddleware(async (auth, req) => {
       },
     })
 
+    // Check for successful response and parse JSON conditionally
+    if (response.ok) {
+      try {
+        const data = await response.json()
+        if (data && data.status === 200) {
+          return NextResponse.rewrite(
+            new URL(reqPath, `https://${data.domain}/${reqPath}`),
+          )
+        }
+      } catch (error) {
+        console.error("Error parsing JSON:", error)
+        return NextResponse.next() // Handle gracefully if JSON parsing fails
+      }
+    } else {
+      console.error("Fetch error:", response.status, await response.text())
+      return NextResponse.next() // Handle gracefully if fetch fails
+    }
+
     const data = await response.json()
     if (data.status === 200 && data) {
       return NextResponse.rewrite(
